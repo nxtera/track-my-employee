@@ -8,10 +8,13 @@
     "start": "node server.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Ashleigh",
+  "license": "BSD3",
+  "homepage": "https://github.com/nxtera/track-my-employee",
   "dependencies": {
-    "asciiart-logo": "^0.2.6",
+    "asciiart-logo": "^0.2.7",
+    "chalk": "^5.0.1",
+    "colors": "^1.4.0",
     "console-table-printer": "^2.11.1",
     "console.table": "^0.10.0",
     "inquirer": "^8.2.4",

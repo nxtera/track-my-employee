@@ -1,12 +1,23 @@
 const inquirer = require('inquirer');
-const cTable = require('console.table');
-const Func = require('./utils/func');
-// const viewDepartments = require('./utils/func');
 const db = require('./db/connection')
+const logo = require('asciiart-logo');
+const config = require('./package.json');
+var colors = require('colors');
 
+// Import functions from the func file.
+const {
+    viewEmployees,
+    viewRoles,
+    addEmployee,
+    addRole,
+    addDepartment,
+    updateEmployeeRole,
+    viewDepartments
+} = require('./utils/func')
 
+// Main menu prompt that displays all functions to the user
 const mainmenu = () => {
-
+    console.log('i like cake and pies'.underline.red); // outputs red underlined text
     inquirer.prompt({
         type: 'list',
         message: 'What would you like to do?',
@@ -24,39 +35,37 @@ const mainmenu = () => {
 
     }).then((answer) => {
 
+// Switch statement to start the function the user has selected
         switch (answer.menu) {
 
             case 'View All Employees':
-                Func.viewEmployees()
-                    .then(() => mainmenu());
+                viewEmployees()
                 break;
 
             case 'Add Employee':
-                Func.addEmployee();
+                addEmployee();
                 break;
 
             case 'Update Employee Role':
-                Func.updateRole();
+                updateEmployeeRole();
                 break;
 
             case 'View All Roles':
                 console.log('...\n');
-                Func.viewRoles();
-                mainmenu();
+                viewRoles();
                 break;
 
             case 'Add Role':
-                Func.addRole();
+                addRole();
                 break;
 
             case 'View All Departments':
                 console.log('...\n');
-                Func.viewDepartments();
-                //mainmenu ();
+                viewDepartments();
                 break;
 
             case 'Add Department':
-                Func.addDepartment();
+                addDepartment();
                 break;
 
             case 'Exit':
@@ -66,7 +75,8 @@ const mainmenu = () => {
     });
 }
 
-// Function call to initialize app
+// Call to initialize app
+console.log(logo(config).render().brightMagenta);
 mainmenu();
 
-module.exports = { mainmenu };
+exports.mainmenu = mainmenu

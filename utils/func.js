@@ -1,13 +1,37 @@
 const inquirer = require('inquirer');
 require('console.table');
 const db = require('../db/connection');
-const { printTable } = require('console-table-printer');
+// alternative table viewer 
+// const { printTable } = require('console-table-printer');
 const main = require('../index');
 
+// Function to check if the user wants to exit or perform more functions
+const isFinished = () => {
+    inquirer.prompt({
+        type: 'list',
+        message: 'Are you finished?',
+        name: 'finished',
+        choices: ["Yes", "No"]
 
+    }).then((answer) => {
+
+        switch (answer.finished) {
+
+            case 'No':
+                let result = main.mainmenu();
+                break;
+
+            case 'Yes':
+                db.end();
+                console.log("See you later!");
+                break;
+        }
+    });
+}
+
+// View all employees
 const viewEmployees = () => {
-    console.log('Showing all employees...\n');
-    db.promise().query(`SELECT employee.id AS ID,
+    db.query(`SELECT employee.id AS ID,
                          employee.first_name AS First_Name,
                          employee.last_name AS Last_Name,
                          role.title AS Role,
@@ -22,12 +46,17 @@ const viewEmployees = () => {
             if (err) {
                 throw err
             } else {
-                //console.table(answer);
-                printTable(answer);
+                console.log('\n');
+                console.log('*********************************************************************************************************\n');
+                console.log('SHOWING ALL EMPLOYEES...\n');
+                console.table(answer);
+                console.log('**********************************************************************************************************\n');
+                isFinished();
             }
         })
 }
 
+// View all roles
 const viewRoles = () => {
     db.query(`SELECT role.id AS ID,
                      role.title AS Role,
@@ -39,23 +68,35 @@ const viewRoles = () => {
             if (err) {
                 throw err
             } else {
-                printTable(answer);
-                console.log('...\n');
+                console.log('\n');
+                console.log('*********************************************************************************************************\n');
+                console.log('SHOWING ALL ROLES...\n');
+                console.table(answer);
+                console.log('**********************************************************************************************************\n');
+                isFinished();
             }
         })
 }
-
+// View all departments
 const viewDepartments = () => {
-    console.log('Showing all Departments...\n');
-    db.query('SELECT * FROM department', (err, answer) => {
+    db.query(`SELECT id AS ID, 
+             department_name AS Department
+             FROM department;`, 
+             (err, answer) => {
         if (err) {
             throw err
         } else {
-            printTable(answer);
+            console.log('\n');
+            console.log('*********************************************************************************************************\n');
+            console.log('SHOWING ALL DEPARTMENTS...\n')
+            console.table(answer);
+            console.log('**********************************************************************************************************\n');
+            isFinished();
         }
     })
 }
 
+// Add an employee
 const addEmployee = () => {
     db.query(`SELECT title, id FROM role`, (err, answer) => {
         if (err) {
@@ -69,8 +110,8 @@ const addEmployee = () => {
                 if (err) {
                     throw err;
                 } else {
-                    const managerList = answer.map(({ manager_id, first_name }) => ({
-                        name: first_name,
+                    const managerList = answer.map(({ manager_id, last_name, first_name }) => ({
+                        name: `${first_name}` + ` ${last_name}`,
                         value: manager_id
                     }));
 
@@ -78,20 +119,21 @@ const addEmployee = () => {
                         {
                             type: 'input',
                             name: 'first_name',
-                            message: 'What is the employees first name?'
+                            message: 'What is the employee\'s first name?'
                         },
                         {
                             type: 'input',
                             name: 'last_name',
-                            message: 'What is the employees last name?'
+                            message: 'What is the employee\'s last name?'
                         },
                         {
                             type: 'list',
                             name: 'role_id',
-                            message: 'What is the employees role?',
+                            message: 'What is the employee\'s role?',
                             choices: roleChoice
 
                         },
+                        // Promt to check if the added employee has a manager
                         {
                             type: 'list',
                             name: 'managed',
@@ -104,12 +146,16 @@ const addEmployee = () => {
                         let last_name = answer.last_name;
                         let role_id = answer.role_id;
 
+                        // If no manager selected null will be entered into manager id in database
                         if (answer.managed === "No") {
                             db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${first_name}', '${last_name}', ${role_id}, null)`,
-                            console.log("********************************************************...\n"),
-                            console.log("Success! " + first_name + " has been added to database."),
-                            console.log("********************************************************...\n"));
+                                console.log('\n'),
+                                console.log("******************************************************************************************"),
+                                console.log("Success! " + first_name + last_name + " has been added to the database."),
+                                console.log("******************************************************************************************\n"));
+                            isFinished();
 
+                            // If a manager is selected user is prompted with a list of current employees
                         } else if (answer.managed === "Yes") {
                             inquirer.prompt([
                                 {
@@ -121,11 +167,13 @@ const addEmployee = () => {
                             ]).then((answer) => {
                                 let manager_id = answer.manager_id;
 
+                                // New employee and mangers information are entered onto the database
                                 db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${first_name}', '${last_name}', ${role_id}, ${manager_id})`,
-                                    //console.log(manager_id)
-                                    console.log("********************************************************.../n"),
-                                    console.log("Success! " + first_name + " has been added to database."),
-                                    console.log("********************************************************.../n"));
+                                    console.log('\n'),
+                                    console.log("***********************************************************************************"),
+                                    console.log("Success! " + first_name + last_name + " has been added to the database."),
+                                    console.log("************************************************************************************\n"));
+                                isFinished();
                             })
 
                         }
@@ -136,7 +184,7 @@ const addEmployee = () => {
         }
     })
 }
-
+// Add a new role into the database, user is prompted to provide additional information on salary, department, etc
 const addRole = () => {
     db.query(`SELECT department_name, id FROM department`, (err, answer) => {
         if (err) {
@@ -165,47 +213,116 @@ const addRole = () => {
                     choices: departmentChoice
                 }
             ]).then(answer => {
-                console.log(answer)
-                db.query(`INSERT INTO role (title, salary, department_id) VALUES ('${answer.title}', ${answer.salary}, ${answer.department_id})`, (err, answer) => {
-                    if (err) {
-                        throw err
-                    } else {
-                        console.log("Success! " + answer.title + " role added.");
+                let newRole = answer.title;
+                db.query(`INSERT INTO role (title, salary, department_id) VALUES ('${newRole}', ${answer.salary}, ${answer.department_id})`,
+                    (err, answer) => {
+                        if (err) {
+                            throw err
+                        } else {
+                            console.log('\n'),
+                                console.log("****************************************************************************"),
+                                console.log("Success! " + newRole + " role added."),
+                                console.log("****************************************************************************\n");
+                            isFinished();
+                        }
 
-                    }
-
-                })
+                    })
             })
         }
     })
-    main.mainmenu();
 }
 
+// Add a new department
 const addDepartment = () => {
     inquirer.prompt([
         {
             type: 'input',
             name: 'addDepartmentName',
-            message: 'What is the name of the department?'
-        },
-    ])
-}
+            message: 'What is the name of the new department?'
+        }
+    ]).then(answer => {
 
-const updateEmployee = () => {
-    inquirer.prompt([
-        {
-            type: 'choice',
-            name: 'updateEmployeeName',
-            message: 'Which employees role do you want to update?',
-            choices: []
-        },
-        {
-            type: 'choice',
-            name: 'updateEmployeeRole',
-            message: 'What role do you want to assign the selected employee?',
-            choices: []
-        },
-    ])
+    let newDepartment = answer.addDepartmentName
+    db.query(`INSERT INTO department (department_name) VALUES ('${newDepartment}')`, 
+    (err, answer) => {
+        if (err) {
+            throw err
+        } else {
+            console.log('\n'),
+                console.log("****************************************************************************"),
+                console.log("Success! " + newDepartment + " department has been added."),
+                console.log("****************************************************************************\n");
+            isFinished();
+        }
+
+    })
+
+}
+)}
+
+// Update employees role
+const updateEmployeeRole = () => {
+
+    //Call up list of current employees
+    db.query(`SELECT * FROM employee`, (err, answer) => {
+        if (err) {
+            throw err;
+        } else {
+            const EmployeeList = answer.map(({ id, first_name, last_name }) => ({
+                name: `${first_name}` + ` ${last_name}`,
+                value: {id, first_name, last_name}
+            }));
+            // Call up list of current roles
+            db.query(`SELECT title, id FROM role`, (err, answer) => {
+                if (err) {
+                    throw err
+                } else {
+                    const roleChoice = answer.map(({ id, title }) => ({
+                        name: title,
+                        value: {id, title}
+                    }));
+                    inquirer.prompt([
+                        {
+                            type: 'list',
+                            name: 'updatedEmployee',
+                            message: 'Which employee\'s role do you want to update?',
+                            choices: EmployeeList
+                        }
+
+                    ]).then((answer) => {
+                        let updatedEmployee = answer.updatedEmployee.id;
+                        let updatedEmployeeFname = answer.updatedEmployee.first_name;
+                        let updatedEmployeeLname = answer.updatedEmployee.last_name;
+
+
+                        inquirer.prompt([
+                            {
+                                type: 'list',
+                                name: 'updatedRole',
+                                message: 'What role do you want to assign to the selected employee?',
+                                choices: roleChoice
+                            }
+                        ]).then((answer) => {
+                            let updatedRole = answer.updatedRole.id;
+                            let updatedRoleTitle = answer.updatedRole.title;
+                            
+                            db.query(`UPDATE employee SET role_id = ${updatedRole} WHERE id = ${updatedEmployee}`, (err, answer) => {
+                                if (err) {
+                                    throw err
+                                } else {
+                                    console.log('\n'),
+                                        console.log("******************************************************************************************************************************"),
+                                        console.log("Success! " + updatedEmployeeFname +" " + updatedEmployeeLname + "\'s role has been updated to " + updatedRoleTitle + "."),
+                                        console.log("*******************************************************************************************************************************\n");
+                                    isFinished();
+                                }
+                            })
+                        })
+                    })
+                }
+            })
+        }
+    })
 }
 
 
@@ -216,5 +333,5 @@ module.exports = {
     addEmployee,
     addRole,
     addDepartment,
-    updateEmployee
+    updateEmployeeRole
 }
