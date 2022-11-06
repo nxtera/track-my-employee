@@ -12,27 +12,20 @@ const {
 } = require("./utils/delete");
 
 // Import update function.
-const {
-    updateEmployeeRole
-  } = require("./utils/update");
+const { updateEmployeeRole, updateEmployeeManager } = require("./utils/update");
 
-  // Import view functions.
+// Import view functions.
 const {
-    viewEmployees,
-    viewRoles,
-    viewDepartments,
-    viewByManager,
-    viewByDepartment,
-    viewByBudget,
-  } = require("./utils/view");
+  viewEmployees,
+  viewRoles,
+  viewDepartments,
+  viewByManager,
+  viewByDepartment,
+  viewByBudget,
+} = require("./utils/view");
 
-  // Import add functions.
-  const {
-    addEmployee,
-    addRole,
-    addDepartment,
-  } = require("./utils/add");
-  
+// Import add functions.
+const { addEmployee, addRole, addDepartment } = require("./utils/add");
 
 // Menu prompt that displays all ADD functions to the user
 const addMenu = () => {
@@ -72,13 +65,21 @@ const updateMenu = () => {
       type: "list",
       message: "What would you like to do?",
       name: "menu",
-      choices: ["Update an employee's role", "Go back"],
+      choices: [
+        "Update an employee's role",
+        "Update an employee's manager",
+        "Go back",
+      ],
     })
     .then((answer) => {
       // Switch statement to start the function the user has selected
       switch (answer.menu) {
         case "Update an employee's role":
           updateEmployeeRole();
+          break;
+
+        case "Update an employee's manager":
+          updateEmployeeManager();
           break;
 
         case "Go back":
@@ -205,41 +206,37 @@ const mainmenu = () => {
 
         case "Exit":
           db.end();
+          console.log("See you later!".bold.brightBlue);
           break;
       }
     });
 };
 
-
 // Function to check if the user wants to exit or perform more functions
 const isFinished = () => {
-    inquirer
-      .prompt({
-        type: "list",
-        message: "Are you finished?",
-        name: "finished",
-        choices: ["Yes", "No"],
-      })
-      .then((answer) => {
-        switch (answer.finished) {
-          case "No":
-            mainmenu();
-            break;
-  
-          case "Yes":
-            db.end();
-            console.log("See you later!");
-            break;
-        }
-      });
-  };
+  inquirer
+    .prompt({
+      type: "list",
+      message: "Are you finished?",
+      name: "finished",
+      choices: ["Yes", "No"],
+    })
+    .then((answer) => {
+      switch (answer.finished) {
+        case "No":
+          mainmenu();
+          break;
 
+        case "Yes":
+          db.end();
+          console.log("See you later!".bold.brightBlue);
+          break;
+      }
+    });
+};
 
 // Call to initialize app
 console.log(logo(config).render().brightMagenta);
 mainmenu();
-
-
-
 
 exports.isFinished = isFinished;
